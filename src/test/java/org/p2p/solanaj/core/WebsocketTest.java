@@ -1,14 +1,18 @@
 package org.p2p.solanaj.core;
 
+import org.java_websocket.server.WebSocketServer;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.p2p.solanaj.programs.SystemProgram;
 import org.p2p.solanaj.rpc.Cluster;
 import org.p2p.solanaj.rpc.RpcClient;
 import org.p2p.solanaj.rpc.RpcException;
+import org.p2p.solanaj.ws.SimpleServer;
 import org.p2p.solanaj.ws.SubscriptionWebSocketClient;
 import org.p2p.solanaj.ws.listeners.AccountNotificationEventListener;
 import org.p2p.solanaj.ws.listeners.LogNotificationEventListener;
+
+import java.net.InetSocketAddress;
 
 import static org.junit.Assert.assertTrue;
 
@@ -22,6 +26,13 @@ public class WebsocketTest extends AccountBasedTest {
     private final static int AMOUNT_OF_LAMPORTS = 100;
 
     private static final PublicKey BTC_USDC_BIDS = new PublicKey("6wLt7CX1zZdFpa6uGJJpZfzWvG6W9rxXjquJDYiFwf9K");
+
+    @Test
+    public void websocketServerTest() {
+        WebSocketServer server = new SimpleServer(new InetSocketAddress("localhost", 8887));
+        server.run();
+    }
+
 
     @Test
     @Ignore
