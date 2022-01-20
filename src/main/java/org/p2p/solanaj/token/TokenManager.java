@@ -8,6 +8,9 @@ import org.p2p.solanaj.programs.TokenProgram;
 import org.p2p.solanaj.rpc.RpcClient;
 import org.p2p.solanaj.rpc.RpcException;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Manager class for calling {@link TokenProgram}-related APIs
  */
@@ -93,14 +96,20 @@ public class TokenManager {
         return result;
     }
 
-    public String initializeAccount(Account newAccount, PublicKey usdcTokenMint, Account owner) {
+    private static PublicKey deriveTokenAddress(PublicKey address, PublicKey tokenMint){
+        List<byte[]> seeds= Arrays.asList(address.toByteArray(),TokenProgram.PROGRAM_ID.toByteArray(),tokenMint.toByteArray());
+        return PublicKey.findProgramAddress(seeds,TokenProgram.SPL_TOKEN_PROGRAM_ID).getAddress();
+    }
+
+    public String initializeAccount(Account newAccount, PublicKey tokenMint, Account owner) {
         final Transaction transaction = new Transaction();
 
         // SPL token instruction
         transaction.addInstruction(
                 TokenProgram.initializeAccount(
                         newAccount.getPublicKey(),
-                        usdcTokenMint,
+                        deriveTokenAddress(newAccount.getPublicKey(),tokenMint),
+                        tokenMint,
                         owner.getPublicKey()
                 )
         );

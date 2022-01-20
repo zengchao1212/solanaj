@@ -118,27 +118,20 @@ public class PublicKey {
 
     }
 
-    public static ProgramDerivedAddress findProgramAddress(List<byte[]> seeds, PublicKey programId) throws Exception {
-        int nonce = 255;
-        PublicKey address;
-
-        List<byte[]> seedsWithNonce = new ArrayList<byte[]>();
-        seedsWithNonce.addAll(seeds);
-
-        while (nonce != 0) {
+    public static ProgramDerivedAddress findProgramAddress(List<byte[]> seeds, PublicKey programId) {
+        int bump_seed = 255;
+        List<byte[]> seedsWithNonce = new ArrayList<>(seeds);
+        while (bump_seed != 0) {
             try {
-                seedsWithNonce.add(new byte[] { (byte) nonce });
-                address = createProgramAddress(seedsWithNonce, programId);
+                seedsWithNonce.add(new byte[] { (byte) bump_seed  });
+                PublicKey address = createProgramAddress(seedsWithNonce, programId);
+                return new ProgramDerivedAddress(address, bump_seed );
             } catch (Exception e) {
                 seedsWithNonce.remove(seedsWithNonce.size() - 1);
-                nonce--;
-                continue;
+                bump_seed --;
             }
-
-            return new ProgramDerivedAddress(address, nonce);
         }
-
-        throw new Exception("Unable to find a viable program address nonce");
+        throw new RuntimeException("Unable to find a viable program address bump seed");
     }
 
     public static PublicKey valueOf(String publicKey) {

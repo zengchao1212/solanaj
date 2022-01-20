@@ -15,6 +15,7 @@ import java.util.List;
 public class TokenProgram extends Program {
 
     public static final PublicKey PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    public static final PublicKey SPL_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
     private static final PublicKey SYSVAR_RENT_PUBKEY = new PublicKey("SysvarRent111111111111111111111111111111111");
 
     private static final int INITIALIZE_METHOD_ID = 1;
@@ -70,22 +71,21 @@ public class TokenProgram extends Program {
         );
     }
 
-    public static TransactionInstruction initializeAccount(final PublicKey account, final PublicKey mint, final PublicKey owner) {
+    public static TransactionInstruction initializeAccount(final PublicKey account, final PublicKey tokenAccount, final PublicKey mint, final PublicKey owner) {
         final List<AccountMeta> keys = new ArrayList<>();
 
+        keys.add(new AccountMeta(owner,true, true));
+        keys.add(new AccountMeta(tokenAccount, false, true));
         keys.add(new AccountMeta(account,false, true));
-        keys.add(new AccountMeta(mint, false, false));
-        keys.add(new AccountMeta(owner,false, true));
+        keys.add(new AccountMeta(mint,false, false));
+        keys.add(new AccountMeta(SystemProgram.PROGRAM_ID,false, false));
+        keys.add(new AccountMeta(PROGRAM_ID,false, false));
         keys.add(new AccountMeta(SYSVAR_RENT_PUBKEY,false, false));
 
-        ByteBuffer buffer = ByteBuffer.allocate(1);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.put((byte) INITIALIZE_METHOD_ID);
-
         return createTransactionInstruction(
-                PROGRAM_ID,
+                SPL_TOKEN_PROGRAM_ID,
                 keys,
-                buffer.array()
+                new byte[0]
         );
     }
 
