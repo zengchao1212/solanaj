@@ -1,5 +1,6 @@
 package org.p2p.solanaj.programs;
 
+import org.p2p.solanaj.core.Account;
 import org.p2p.solanaj.core.AccountMeta;
 import org.p2p.solanaj.core.PublicKey;
 import org.p2p.solanaj.core.TransactionInstruction;
@@ -71,7 +72,7 @@ public class TokenProgram extends Program {
         );
     }
 
-    public static TransactionInstruction initializeAccount(final PublicKey account, final PublicKey tokenAccount, final PublicKey mint, final PublicKey owner) {
+    public static TransactionInstruction initializeAccount(final PublicKey account,final PublicKey tokenAccount, final PublicKey mint, final PublicKey owner) {
         final List<AccountMeta> keys = new ArrayList<>();
 
         keys.add(new AccountMeta(owner,true, true));

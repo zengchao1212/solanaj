@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.Sha256Hash;
@@ -51,32 +50,11 @@ public class PublicKey {
         return Arrays.equals(this.pubkey, pubkey.toByteArray());
     }
 
-    @Override
-    public final int hashCode() {
-        int result = 17;
-        if (pubkey != null) {
-            result = 31 * result + Arrays.hashCode(pubkey);
-        }
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null)
-            return false;
-        if (getClass() != o.getClass())
-            return false;
-        PublicKey person = (PublicKey) o;
-        return equals(person);
-    }
-
     public String toString() {
         return toBase58();
     }
 
-    public static PublicKey createProgramAddress(List<byte[]> seeds, PublicKey programId) {
+    public static PublicKey createProgramAddress(List<byte[]> seeds, PublicKey programId) throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
         for (byte[] seed : seeds) {
@@ -84,16 +62,16 @@ public class PublicKey {
                 throw new IllegalArgumentException("Max seed length exceeded");
             }
 
-            buffer.writeBytes(seed);
+            buffer.write(seed);
         }
 
-        buffer.writeBytes(programId.toByteArray());
-        buffer.writeBytes("ProgramDerivedAddress".getBytes());
+        buffer.write(programId.toByteArray());
+        buffer.write("ProgramDerivedAddress".getBytes());
 
         byte[] hash = Sha256Hash.hash(buffer.toByteArray());
 
         if (TweetNaclFast.is_on_curve(hash) != 0) {
-            throw new RuntimeException("Invalid seeds, address must fall off the curve");
+            throw new Exception("Invalid seeds, address must fall off the curve");
         }
 
         return new PublicKey(hash);
@@ -118,24 +96,27 @@ public class PublicKey {
 
     }
 
-    public static ProgramDerivedAddress findProgramAddress(List<byte[]> seeds, PublicKey programId) {
-        int bump_seed = 255;
-        List<byte[]> seedsWithNonce = new ArrayList<>(seeds);
-        while (bump_seed != 0) {
+    public static ProgramDerivedAddress findProgramAddress(List<byte[]> seeds, PublicKey programId) throws Exception {
+        int nonce = 255;
+        PublicKey address;
+
+        List<byte[]> seedsWithNonce = new ArrayList<byte[]>();
+        seedsWithNonce.addAll(seeds);
+
+        while (nonce != 0) {
             try {
-                seedsWithNonce.add(new byte[] { (byte) bump_seed  });
-                PublicKey address = createProgramAddress(seedsWithNonce, programId);
-                return new ProgramDerivedAddress(address, bump_seed );
+                seedsWithNonce.add(new byte[] { (byte) nonce });
+                address = createProgramAddress(seedsWithNonce, programId);
             } catch (Exception e) {
                 seedsWithNonce.remove(seedsWithNonce.size() - 1);
-                bump_seed --;
+                nonce--;
+                continue;
             }
-        }
-        throw new RuntimeException("Unable to find a viable program address bump seed");
-    }
 
-    public static PublicKey valueOf(String publicKey) {
-        return new PublicKey(publicKey);
+            return new ProgramDerivedAddress(address, nonce);
+        }
+
+        throw new Exception("Unable to find a viable program address nonce");
     }
 
 }

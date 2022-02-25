@@ -3,10 +3,9 @@ package org.p2p.solanaj.ws;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
@@ -17,7 +16,6 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.p2p.solanaj.rpc.types.RpcNotificationResult;
 import org.p2p.solanaj.rpc.types.RpcRequest;
 import org.p2p.solanaj.rpc.types.RpcResponse;
-import org.p2p.solanaj.rpc.types.config.Commitment;
 import org.p2p.solanaj.ws.listeners.NotificationEventListener;
 
 public class SubscriptionWebSocketClient extends WebSocketClient {
@@ -32,34 +30,15 @@ public class SubscriptionWebSocketClient extends WebSocketClient {
         }
     }
 
-    private Map<String, SubscriptionParams> subscriptions = new ConcurrentHashMap<>();
-    private Map<String, Long> subscriptionIds = new ConcurrentHashMap<>();
-    private Map<Long, NotificationEventListener> subscriptionListeners = new ConcurrentHashMap<>();
-    private static final Logger LOGGER = Logger.getLogger(SubscriptionWebSocketClient.class.getName());
+    private static SubscriptionWebSocketClient instance;
 
-    public static SubscriptionWebSocketClient getExactPathInstance(String endpoint) {
-        URI serverURI;
-        SubscriptionWebSocketClient instance;
-
-        try {
-            serverURI = new URI(endpoint);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-
-        instance = new SubscriptionWebSocketClient(serverURI);
-
-        if (!instance.isOpen()) {
-            instance.connect();
-        }
-
-        return instance;
-    }
+    private Map<String, SubscriptionParams> subscriptions = new HashMap<>();
+    private Map<String, Long> subscriptionIds = new HashMap<>();
+    private Map<Long, NotificationEventListener> subscriptionLinsteners = new HashMap<>();
 
     public static SubscriptionWebSocketClient getInstance(String endpoint) {
-        URI serverURI;
         URI endpointURI;
-        SubscriptionWebSocketClient instance;
+        URI serverURI;
 
         try {
             endpointURI = new URI(endpoint);
@@ -68,13 +47,16 @@ public class SubscriptionWebSocketClient extends WebSocketClient {
             throw new IllegalArgumentException(e);
         }
 
-        instance = new SubscriptionWebSocketClient(serverURI);
+        if (instance == null) {
+            instance = new SubscriptionWebSocketClient(serverURI);
+        }
 
         if (!instance.isOpen()) {
             instance.connect();
         }
 
         return instance;
+
     }
 
     public SubscriptionWebSocketClient(URI serverURI) {
@@ -83,14 +65,13 @@ public class SubscriptionWebSocketClient extends WebSocketClient {
     }
 
     public void accountSubscribe(String key, NotificationEventListener listener) {
-        List<Object> params = new ArrayList<>();
+        List<Object> params = new ArrayList<Object>();
         params.add(key);
-        params.add(Map.of("encoding", "jsonParsed", "commitment", Commitment.PROCESSED.getValue()));
 
         RpcRequest rpcRequest = new RpcRequest("accountSubscribe", params);
 
         subscriptions.put(rpcRequest.getId(), new SubscriptionParams(rpcRequest, listener));
-        subscriptionIds.put(rpcRequest.getId(), 0L);
+        subscriptionIds.put(rpcRequest.getId(), null);
 
         updateSubscriptions();
     }
@@ -102,32 +83,6 @@ public class SubscriptionWebSocketClient extends WebSocketClient {
         RpcRequest rpcRequest = new RpcRequest("signatureSubscribe", params);
 
         subscriptions.put(rpcRequest.getId(), new SubscriptionParams(rpcRequest, listener));
-        subscriptionIds.put(rpcRequest.getId(), 0L);
-
-        updateSubscriptions();
-    }
-
-    public void logsSubscribe(String mention, NotificationEventListener listener) {
-        List<Object> params = new ArrayList<Object>();
-        params.add(Map.of("mentions", List.of(mention)));
-        params.add(Map.of("commitment", "finalized"));
-
-        RpcRequest rpcRequest = new RpcRequest("logsSubscribe", params);
-
-        subscriptions.put(rpcRequest.getId(), new SubscriptionParams(rpcRequest, listener));
-        subscriptionIds.put(rpcRequest.getId(), 0L);
-
-        updateSubscriptions();
-    }
-
-    public void logsSubscribe(List<String> mentions, NotificationEventListener listener) {
-        List<Object> params = new ArrayList<Object>();
-        params.add(Map.of("mentions", mentions));
-        params.add(Map.of("commitment", "finalized"));
-
-        RpcRequest rpcRequest = new RpcRequest("logsSubscribe", params);
-
-        subscriptions.put(rpcRequest.getId(), new SubscriptionParams(rpcRequest, listener));
         subscriptionIds.put(rpcRequest.getId(), null);
 
         updateSubscriptions();
@@ -135,7 +90,6 @@ public class SubscriptionWebSocketClient extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        LOGGER.info("Websocket connection opened");
         updateSubscriptions();
     }
 
@@ -150,36 +104,29 @@ public class SubscriptionWebSocketClient extends WebSocketClient {
             String rpcResultId = rpcResult.getId();
             if (rpcResultId != null) {
                 if (subscriptionIds.containsKey(rpcResultId)) {
-                    try {
-                        subscriptionIds.put(rpcResultId, rpcResult.getResult());
-                        subscriptionListeners.put(rpcResult.getResult(), subscriptions.get(rpcResultId).listener);
-                        subscriptions.remove(rpcResultId);
-                    } catch (NullPointerException ignored) {
-
-                    }
+                    subscriptionIds.put(rpcResultId, rpcResult.getResult());
+                    subscriptionLinsteners.put(rpcResult.getResult(), subscriptions.get(rpcResultId).listener);
+                    subscriptions.remove(rpcResultId);
                 }
             } else {
                 JsonAdapter<RpcNotificationResult> notificationResultAdapter = new Moshi.Builder().build()
                         .adapter(RpcNotificationResult.class);
                 RpcNotificationResult result = notificationResultAdapter.fromJson(message);
-                NotificationEventListener listener = subscriptionListeners.get(result.getParams().getSubscription());
+                NotificationEventListener listener = subscriptionLinsteners.get(result.getParams().getSubscription());
 
                 Map value = (Map) result.getParams().getResult().getValue();
 
                 switch (result.getMethod()) {
                     case "signatureNotification":
-                        listener.onNotificationEvent(new SignatureNotification(value.get("err")));
+                        listener.onNotifiacationEvent(new SignatureNotification(value.get("err")));
                         break;
                     case "accountNotification":
-                    case "logsNotification":
-                        if (listener != null) {
-                            listener.onNotificationEvent(value);
-                        }
+                        listener.onNotifiacationEvent(value);
                         break;
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            System.out.println(ex);
         }
     }
 

@@ -13,23 +13,28 @@ public class Transaction {
 
     public static final int SIGNATURE_LENGTH = 64;
 
-    private Message message;
+    private Message messgae;
     private List<String> signatures;
     private byte[] serializedMessage;
+    private PublicKey feePayer;
 
     public Transaction() {
-        this.message = new Message();
+        this.messgae = new Message();
         this.signatures = new ArrayList<String>();
     }
 
     public Transaction addInstruction(TransactionInstruction instruction) {
-        message.addInstruction(instruction);
+        messgae.addInstruction(instruction);
 
         return this;
     }
 
     public void setRecentBlockHash(String recentBlockhash) {
-        message.setRecentBlockHash(recentBlockhash);
+        messgae.setRecentBlockHash(recentBlockhash);
+    }
+
+    public void setFeePayer(PublicKey feePayer) {
+        this.feePayer = feePayer;
     }
 
     public void sign(Account signer) {
@@ -42,10 +47,12 @@ public class Transaction {
             throw new IllegalArgumentException("No signers");
         }
 
-        Account feePayer = signers.get(0);
-        message.setFeePayer(feePayer);
+        if (feePayer == null) {
+            feePayer = signers.get(0).getPublicKey();
+        }
+        messgae.setFeePayer(feePayer);
 
-        serializedMessage = message.serialize();
+        serializedMessage = messgae.serialize();
 
         for (Account signer : signers) {
             TweetNaclFast.Signature signatureProvider = new TweetNaclFast.Signature(new byte[0], signer.getSecretKey());
@@ -72,5 +79,26 @@ public class Transaction {
         out.put(serializedMessage);
 
         return out.array();
+    }
+
+    public String getSignature() {
+        if (signatures.size() > 0) {
+            return signatures.get(0);
+        }
+
+        return null;
+    }
+
+    public byte[] serializeMessage() {
+        if(serializedMessage==null){
+            messgae.setFeePayer(feePayer);
+            serializedMessage= messgae.serialize();
+        }
+        return serializedMessage;
+    }
+
+    public Transaction addSignature(String signature) {
+        signatures.add(signature);
+        return this;
     }
 }
