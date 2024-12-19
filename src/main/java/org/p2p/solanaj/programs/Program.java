@@ -10,7 +10,8 @@ import java.util.List;
  * Abstract class for
  */
 public abstract class Program {
-
+    public static final PublicKey SYSVAR_RECENT_BLOCKHASHES_PUBKEY = new PublicKey("SysvarRecentB1ockHashes11111111111111111111");
+    public static final PublicKey SYSVAR_RENT_PUBKEY = new PublicKey("SysvarRent111111111111111111111111111111111");
     /**
      * Returns a {@link TransactionInstruction} built from the specified values.
      * @param programId Solana program we are calling

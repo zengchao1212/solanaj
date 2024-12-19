@@ -1,37 +1,47 @@
 package org.p2p.solanaj.programs;
 
-import org.p2p.solanaj.core.PublicKey;
-import org.p2p.solanaj.core.TransactionInstruction;
-
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.p2p.solanaj.core.Account;
+import org.p2p.solanaj.core.PublicKey;
+import org.p2p.solanaj.core.Transaction;
+import org.p2p.solanaj.utils.TweetNaclFast;
 
-import org.bitcoinj.core.Base58;
+import java.util.Base64;
+import java.util.List;
 
 public class SystemProgramTest {
 
+
     @Test
-    public void transferInstruction() {
-        PublicKey fromPublicKey = new PublicKey("QqCCvshxtqMAL2CVALqiJB7uEeE5mjSPsseQdDzsRUo");
-        PublicKey toPublickKey = new PublicKey("GrDMoeqMLFjeXQ24H56S1RLgT4R76jsuWCd6SvXyGPQ5");
-        int lamports = 3000;
-
-        TransactionInstruction instruction = SystemProgram.transfer(fromPublicKey, toPublickKey, lamports);
-
-        assertEquals(SystemProgram.PROGRAM_ID, instruction.getProgramId());
-        assertEquals(2, instruction.getKeys().size());
-        assertEquals(toPublickKey, instruction.getKeys().get(1).getPublicKey());
-
-        assertArrayEquals(new byte[] { 2, 0, 0, 0, -72, 11, 0, 0, 0, 0, 0, 0 }, instruction.getData());
+    public void nonceAccountInit() {
+        Account nonce = new Account();
+        PublicKey nonceAccount = nonce.getPublicKey();
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(Hex.decode(""));
+        Account owner = new Account(keyPair);
+        PublicKey ownerAccount = owner.getPublicKey();
+        int lamports = 2039280;
+        Transaction transaction = new Transaction();
+        transaction.addInstruction(SystemProgram.createAccount(ownerAccount, nonceAccount, lamports, 80, SystemProgram.PROGRAM_ID));
+        transaction.addInstruction(SystemProgram.nonceInitialize(nonceAccount, ownerAccount));
+        transaction.setRecentBlockHash("GdkE8GSLbojaHSr4wk3rfeym9L58KVTc8RjRK47AY87j");
+        transaction.sign(List.of(owner, nonce));
+        System.out.println(Base64.getEncoder().encodeToString(transaction.serialize()));
     }
 
     @Test
-    public void createAccountInstruction() {
-        TransactionInstruction instruction = SystemProgram.createAccount(SystemProgram.PROGRAM_ID,
-                SystemProgram.PROGRAM_ID, 2039280, 165, SystemProgram.PROGRAM_ID);
-
-        assertEquals("11119os1e9qSs2u7TsThXqkBSRUo9x7kpbdqtNNbTeaxHGPdWbvoHsks9hpp6mb2ed1NeB",
-                Base58.encode(instruction.getData()));
+    public void transfer() {
+        TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(Hex.decode(""));
+        Account owner = new Account(keyPair);
+        PublicKey ownerAccount = owner.getPublicKey();
+        PublicKey nonceAccount = new PublicKey("Emc6xjwdsTPAGNPHb9tgU56dNoE5gTmdTAVgLFPheQrq");
+        PublicKey toAccount = new PublicKey("2LAJoPdc1bVhi92Ffb5bitR2paWUhHg9DX1AThXPEFLR");
+        Transaction transaction = new Transaction();
+        transaction.addInstruction(SystemProgram.nonceAdvance(nonceAccount, ownerAccount));
+        transaction.addInstruction(SystemProgram.transfer(ownerAccount, toAccount, 200000000));
+        transaction.setRecentBlockHash("ArsyuaL766xxLjw5bd7e9W87cyy2nt4PQuHN71MSUVjr");
+        transaction.sign(owner);
+        System.out.println(Base64.getEncoder().encodeToString(transaction.serialize()));
     }
 
 }

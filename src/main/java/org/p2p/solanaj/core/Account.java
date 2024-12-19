@@ -1,13 +1,13 @@
 package org.p2p.solanaj.core;
 
+import org.bitcoinj.crypto.*;
+import org.p2p.solanaj.utils.TweetNaclFast;
+import org.p2p.solanaj.utils.bip32.wallet.DerivableType;
+import org.p2p.solanaj.utils.bip32.wallet.SolanaBip44;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
-
-import org.bitcoinj.crypto.*;
-import org.p2p.solanaj.utils.TweetNaclFast;
-import org.p2p.solanaj.utils.bip32.wallet.SolanaBip44;
-import org.p2p.solanaj.utils.bip32.wallet.DerivableType;
 
 public class Account {
     private TweetNaclFast.Signature.KeyPair keyPair;
@@ -20,7 +20,7 @@ public class Account {
         this.keyPair = TweetNaclFast.Signature.keyPair_fromSecretKey(secretKey);
     }
 
-    private Account(TweetNaclFast.Signature.KeyPair keyPair) {
+    public Account(TweetNaclFast.Signature.KeyPair keyPair) {
         this.keyPair = keyPair;
     }
 
