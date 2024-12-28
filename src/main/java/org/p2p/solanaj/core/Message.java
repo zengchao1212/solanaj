@@ -1,12 +1,11 @@
 package org.p2p.solanaj.core;
 
+import org.bitcoinj.core.Base58;
+import org.p2p.solanaj.utils.ShortvecEncoding;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.bitcoinj.core.Base58;
-
-import org.p2p.solanaj.utils.ShortvecEncoding;
 
 public class Message {
     private class MessageHeader {
@@ -40,7 +39,7 @@ public class Message {
     private String recentBlockhash;
     private AccountKeysList accountKeys;
     private List<TransactionInstruction> instructions;
-    private Account feePayer;
+    private PublicKey feePayer;
 
     public Message() {
         this.accountKeys = new AccountKeysList();
@@ -142,13 +141,13 @@ public class Message {
         return out.array();
     }
 
-    protected void setFeePayer(Account feePayer) {
+    protected void setFeePayer(PublicKey feePayer) {
         this.feePayer = feePayer;
     }
 
     private List<AccountMeta> getAccountKeys() {
         List<AccountMeta> keysList = accountKeys.getList();
-        int feePayerIndex = findAccountIndex(keysList, feePayer.getPublicKey());
+        int feePayerIndex = findAccountIndex(keysList, feePayer);
 
         List<AccountMeta> newList = new ArrayList<AccountMeta>();
         AccountMeta feePayerMeta = keysList.get(feePayerIndex);

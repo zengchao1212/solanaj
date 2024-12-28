@@ -1,13 +1,13 @@
 package org.p2p.solanaj.core;
 
+import org.bitcoinj.core.Base58;
+import org.p2p.solanaj.utils.ShortvecEncoding;
+import org.p2p.solanaj.utils.TweetNaclFast;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.bitcoinj.core.Base58;
-import org.p2p.solanaj.utils.ShortvecEncoding;
-import org.p2p.solanaj.utils.TweetNaclFast;
 
 public class Transaction {
 
@@ -16,6 +16,7 @@ public class Transaction {
     private Message message;
     private List<String> signatures;
     private byte[] serializedMessage;
+    private PublicKey feePayer;
 
     public Transaction() {
         this.message = new Message();
@@ -43,7 +44,7 @@ public class Transaction {
         }
 
         Account feePayer = signers.get(0);
-        message.setFeePayer(feePayer);
+        message.setFeePayer(feePayer.getPublicKey());
 
         serializedMessage = message.serialize();
 
@@ -72,5 +73,23 @@ public class Transaction {
         out.put(serializedMessage);
 
         return out.array();
+    }
+
+    public String getSignature() {
+        return this.signatures.size() > 0 ? (String) this.signatures.get(0) : null;
+    }
+
+    public byte[] serializeMessage() {
+        if (this.serializedMessage == null) {
+            message.setFeePayer(feePayer);
+            this.serializedMessage = message.serialize();
+        }
+
+        return this.serializedMessage;
+    }
+
+    public Transaction addSignature(String signature) {
+        this.signatures.add(signature);
+        return this;
     }
 }
