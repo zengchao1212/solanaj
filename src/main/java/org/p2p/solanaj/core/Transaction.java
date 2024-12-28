@@ -1,5 +1,6 @@
 package org.p2p.solanaj.core;
 
+import lombok.Setter;
 import org.bitcoinj.core.Base58;
 import org.p2p.solanaj.utils.ShortvecEncoding;
 import org.p2p.solanaj.utils.TweetNaclFast;
@@ -16,6 +17,7 @@ public class Transaction {
     private Message message;
     private List<String> signatures;
     private byte[] serializedMessage;
+    @Setter
     private PublicKey feePayer;
 
     public Transaction() {
