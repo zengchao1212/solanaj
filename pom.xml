@@ -12,6 +12,19 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.0.1</version>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
                         <source>${maven.compiler.source}</source>
@@ -85,9 +98,11 @@
 
     <distributionManagement>
         <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/skynetcapital/solanaj</url>
+            <id>aliyun-xiangyi-release</id>
+            <url>https://packages.aliyun.com/60a38d57b03f7fc0e7613dc6/maven/2104139-release-rt8uy2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </distributionManagement>
 </project>
