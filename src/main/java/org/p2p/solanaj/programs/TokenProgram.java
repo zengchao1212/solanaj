@@ -70,7 +70,7 @@ public class TokenProgram extends Program {
         );
     }
 
-    public static TransactionInstruction initializeAccount(final PublicKey account, final PublicKey tokenAccount, final PublicKey mint, final PublicKey owner) {
+    public static TransactionInstruction associateTokenAccount(final PublicKey account, final PublicKey tokenAccount, final PublicKey mint, final PublicKey owner) {
         final List<AccountMeta> keys = new ArrayList<>();
 
         keys.add(new AccountMeta(owner,true, true));
@@ -85,6 +85,25 @@ public class TokenProgram extends Program {
                 SPL_TOKEN_PROGRAM_ID,
                 keys,
                 new byte[0]
+        );
+    }
+
+    public static TransactionInstruction initializeAccount(final PublicKey tokenAccount, final PublicKey mint, final PublicKey owner) {
+        final List<AccountMeta> keys = new ArrayList<>();
+
+        keys.add(new AccountMeta(tokenAccount, true, true));
+        keys.add(new AccountMeta(mint, false, false));
+        keys.add(new AccountMeta(owner, false, false));
+        keys.add(new AccountMeta(SYSVAR_RENT_PUBKEY, false, false));
+
+        ByteBuffer buffer = ByteBuffer.allocate(1);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.put((byte) INITIALIZE_METHOD_ID);
+
+        return createTransactionInstruction(
+                PROGRAM_ID,
+                keys,
+                buffer.array()
         );
     }
 

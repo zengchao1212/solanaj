@@ -106,7 +106,7 @@ public class TokenManager {
 
         // SPL token instruction
         transaction.addInstruction(
-                TokenProgram.initializeAccount(
+                TokenProgram.associateTokenAccount(
                         newAccount.getPublicKey(),
                         deriveTokenAddress(newAccount.getPublicKey(),tokenMint),
                         tokenMint,
